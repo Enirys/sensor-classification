@@ -36,6 +36,39 @@ namespace RestClient.Core
                 }
             }
         }
+        
+        public IEnumerator HttpGetHeaders(string url, System.Action<Response> callback, IEnumerable<RequestHeader> headers = null)
+        {
+            using(UnityWebRequest webRequest = UnityWebRequest.Get(url))
+            {
+                if(headers != null)
+                {
+                    foreach (RequestHeader header in headers)
+                    {
+                        webRequest.SetRequestHeader(header.Key, header.Value);
+                    }
+                }
+                
+                yield return webRequest.SendWebRequest();
+                
+                if(webRequest.isNetworkError){
+                    callback(new Response {
+                        StatusCode = webRequest.responseCode,
+                        Error = webRequest.error,
+                    });
+                }
+                
+                if(webRequest.isDone)
+                {
+                    string data = System.Text.Encoding.UTF8.GetString(webRequest.downloadHandler.data);
+                    callback(new Response {
+                        StatusCode = webRequest.responseCode,
+                        Error = webRequest.error,
+                        Data = data
+                    });
+                }
+            }
+        }
 
         public IEnumerator HttpDelete(string url, System.Action<Response> callback)
         {
@@ -90,7 +123,8 @@ namespace RestClient.Core
                     callback(new Response {
                         StatusCode = webRequest.responseCode,
                         Error = webRequest.error,
-                        Data = data
+                        Data = data,
+                        Headers = webRequest.GetResponseHeaders()
                     });
                 }
             }

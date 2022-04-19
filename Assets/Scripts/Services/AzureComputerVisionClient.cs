@@ -1,10 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using RestClient.Core;
 using RestClient.Core.Models;
 using TMPro;
@@ -45,10 +41,22 @@ public class AzureComputerVisionClient : MonoBehaviour
     private Slider confidenceSlider;
     [SerializeField]
     private GameObject predictionResult;
+    [SerializeField]
+    private RawImage check;
+    [SerializeField]
+    private Sprite checkMark;
+    [SerializeField]
+    private Sprite crossMark;
+    [SerializeField] 
+    private TMP_Text orderTxt;
 
+    [SerializeField] private Color redColor;
+    [SerializeField] private Color greenColor;
+    
     private RequestHeader _clientSecurityHeader;
     private RequestHeader _contentTypeHeader;
     private string _selectedPath = "";
+    private string _predictionName = "";
     
     void Start()
     {
@@ -85,6 +93,26 @@ public class AzureComputerVisionClient : MonoBehaviour
             _clientSecurityHeader,
             _contentTypeHeader
         }));
+    }
+
+    public void CheckOrder()
+    {
+        string sensorName = PlayerPrefs.GetString("Sensor name");
+        check.gameObject.SetActive(true);
+        orderTxt.gameObject.SetActive(true);
+        if (_predictionName.Equals(sensorName))
+        {
+            orderTxt.text = "Order is correct!";
+            orderTxt.color = greenColor;
+            check.texture = checkMark.texture;
+        }
+        else
+        {
+            orderTxt.text = "Order is incorrect!";
+            orderTxt.color = redColor;
+            check.texture = crossMark.texture;
+        }
+            
     }
     
     IEnumerator DownloadImage(string MediaUrl)
@@ -132,11 +160,11 @@ public class AzureComputerVisionClient : MonoBehaviour
             
             // show the prediction with the highest probability
             confidenceTxt.text = "Confidence " + (azureCustomVisionResponse.predictions[0].probability * 100).ToString("0.00") + "%";
-            string predictionName = azureCustomVisionResponse.predictions[0].tagName;
-            predictionTxt.text = predictionName;
+            _predictionName = azureCustomVisionResponse.predictions[0].tagName;
+            predictionTxt.text = _predictionName;
             confidenceSlider.value = azureCustomVisionResponse.predictions[0].probability;
             predictionResult.SetActive(true);
-            string[] modelName = predictionName.Split(' ');
+            string[] modelName = _predictionName.Split(' ');
             string reference = modelName[modelName.Length - 1];
             HomeMenuController.Instance.SensorModel = Resources.Load("3DModels/Prefabs/" + reference) as GameObject;
         }
